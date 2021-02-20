@@ -1,10 +1,9 @@
 import datetime
-from datetime import datetime as dt
 import dns
 import os 
 
+from datetime import datetime as dt
 from flask import Flask, Response, request
- 
 from pymongo import MongoClient
 
 # Need to move this bc it has password. Temporariy remove for now.
