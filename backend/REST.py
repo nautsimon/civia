@@ -1,6 +1,6 @@
 import datetime
 from datetime import datetime as dt
-
+import dns
 import os 
 
 from flask import Flask, Response, request
@@ -8,7 +8,7 @@ from flask import Flask, Response, request
 from pymongo import MongoClient
 
 # Need to move this bc it has password. Temporariy remove for now.
-client = MongoClient("mongodb+srv://ryanz:<Password>@cluster0.3fgry.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+client = MongoClient("mongodb+srv://ryanz:<>@cluster0.3fgry.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 db = client.forum
 posts = db.post
 
