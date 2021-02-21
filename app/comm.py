@@ -23,7 +23,7 @@ Arguments:
         time, String
             Must be in format %Y-%m-%d %H:%M:%S, or YYYY-mm-dd HH:MM:SS
 Returns:
-    -1 if an error is thrown, the id of the inserted post otherwise.
+    -1 if an error is thrown, 1 otherwise.
 """
 def create_new_post(postInfo:dict):
     post = { "locationId": postInfo["locationId"],
@@ -40,7 +40,7 @@ def create_new_post(postInfo:dict):
 
     try:
         posts.insert_one(post)
-        return postInfo["posterId"] 
+        return 1
     except Exception as e:
         print(e)
         return -1
@@ -59,24 +59,30 @@ Returns:
     None
 """
 def like_or_dislike(postId:int, like:int, likerId:int):
-    post = posts.find_one({"_id": postId})
-    num_likes = post['likes']
-    likers = post['likers']
-    dislikers = post['dislikers']
+    try:
+        post = posts.find_one({"_id": postId})
+        num_likes = post['likes']
+        likers = post['likers']
+        dislikers = post['dislikers']
 
-    if like == 1:
-        likers.append(likerId)
-    elif like == -1:
-        dislikers.append(likerId)
+        if like == 1:
+            likers.append(likerId)
+        elif like == -1:
+            dislikers.append(likerId)
 
-    post = posts.update_one({
-        "_id": postId },
-        { '$set': {
-            'likes': num_likes + like,
-            'likers': likers,
-            'dislikers': dislikers
-        }
-    }, upsert=False)
+        post = posts.update_one({
+            "_id": postId },
+            { '$set': {
+                'likes': num_likes + like,
+                'likers': likers,
+                'dislikers': dislikers
+            }
+        }, upsert=False)
+
+        return 1
+    except Exception as e:
+        print(e)
+        return -1
 
 """
 Help:
@@ -122,3 +128,7 @@ def get_all_posts(locationId:str = None, posterId:int = None, likerId:int = None
         ret = sorted(ret, key=lambda x:dt.strptime(x['time'], '%Y-%m-%d %H:%M:%S'), reverse=True)
 
     return ret
+
+def get_latest_id():
+    report = posts.find_one(sort=[( '_id', -1)])
+    return report['_id']
