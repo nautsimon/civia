@@ -10,6 +10,7 @@ from pymongo import MongoClient
 client = MongoClient("mongodb+srv://ryanz:<>@cluster0.3fgry.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 db = client.forum
 posts = db.post
+replies = db.replies
 
 """
 Help:
@@ -27,7 +28,7 @@ Returns:
 """
 def create_new_post(postInfo:dict):
     post = { "locationId": postInfo["locationId"],
-             "_id": postInfo["postId"],
+             "_id": get_latest_id("post") + 1,
              "postText": postInfo["postText"],
              "posterId":  postInfo["posterId"],
              "time": postInfo["time"],
@@ -35,7 +36,7 @@ def create_new_post(postInfo:dict):
              "likes": 0,
              "likers": [],
              "dislikers": [],
-             "replies": ""
+             "replies": []
     }
 
     try:
@@ -129,6 +130,85 @@ def get_all_posts(locationId:str = None, posterId:int = None, likerId:int = None
 
     return ret
 
-def get_latest_id():
-    report = posts.find_one(sort=[( '_id', -1)])
+def delete_post(postId:int):
+    try:
+        post = posts.find_one({"_id": postId})
+        reply_list = post['replies']
+        for reply in reply_list:
+            replies.delete_one({"_id": reply})
+        posts.delete_one({"_id": postId})
+        return 1
+    except Exception as e:
+        return -1
+
+# Pass in a list of replies, as stored in the post document
+def get_all_replies(reply_list:list):
+    try:
+        ret = []
+        for reply in reply_list:
+            temp = replies.find_one({'_id': reply})
+            ret.append(temp)
+
+        return ret
+    except Exception as e:
+        print(e)
+        return -1
+
+def add_reply(postId:int, userId:int, replyText:str):
+    try:
+        post = posts.find_one({"_id": postId})
+        replyId = get_latest_id("reply") + 1
+        reply = { 
+            "userId": userId,
+            "postId": postId,
+            "replyText": replyText,
+            "_id": replyId,
+        }
+
+        reply_list = post[replyId]
+        reply_list.append()
+        post = posts.update_one({
+                "_id": postId },
+                { '$set': {
+                    'replies': reply_list
+                }
+            }, upsert=False)
+    
+        replies.insert_one(reply)
+        return 1
+    except Exception as e:
+        print(e)
+        return -1
+
+def delete_reply(replyId:int):
+    try:
+        reply = replies.find_one({"_id": replyId})
+        postId = reply['postId']
+        post = posts.find_one({"_id": postId})
+        reply_list = post['replies']
+        reply_list.remove(replyId)
+
+        post = posts.update_one({
+                "_id": postId },
+                { '$set': {
+                    'replies': reply_list
+                }
+            }, upsert=False)
+
+        replies.delete_one({"_id": replyId})
+        return 1
+    except Exception as e:
+        print(e)
+        return -1
+
+"""
+Helper function to return last submitted post
+"""
+def get_latest_id(arg:str = "post"):
+    if (arg == "post"):
+        report = posts.find_one(sort=[( '_id', -1)])
+    elif (arg == "reply"):
+        report = replies.find_one(sort=[( '_id', -1)])
+    if report.count() == 0:
+        return 0
     return report['_id']
