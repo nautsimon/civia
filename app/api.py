@@ -9,7 +9,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 # Note: Pass in time since I can't access the user's time zone here.
 @app.route('/newpost', methods=["POST"])
-def new_post():
+def newpost():
     locationId = request.form.get('locationId', None)
     postText = request.form.get('postText', None)
     posterId = request.form.get('posterId', None)
